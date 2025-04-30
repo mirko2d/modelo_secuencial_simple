@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Modelo Y = 2X + 6</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      background-color: white;
+      color: black;
+      text-align: center;
+      margin: 20px;
+    }
+
+    button {
+      padding: 5px 10px;
+      font-size: 16px;
+      margin-top: 10px;
+    }
+
+    input {
+      padding: 5px;
+      font-size: 16px;
+      width: 80px;
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    #status, #result {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>Entrenamiento del modelo Y = 2X + 6</h1>
+  <button id="trainModel">Entrenar Modelo</button>
+  <p id="status">Esperando entrenamiento...</p>
+
+  <div id="predictionSection" style="display:none;">
+    <label for="inputX">Introduce un valor de X:</label>
+    <input type="number" id="inputX">
+    <button id="predictBtn">Predecir Y</button>
+    <p id="result"></p>
+  </div>
+
+  <script>
+    let model;
+
+    document.getElementById('trainModel').addEventListener('click', async () => {
+      document.getElementById('status').innerText = 'Entrenando modelo...';
+
+      model = tf.sequential();
+      model.add(tf.layers.dense({ units: 1, inputShape: [1] }));
+
+      model.compile({
+        loss: 'meanSquaredError',
+        optimizer: 'sgd'
+      });
+
+      const xs = tf.tensor2d([-6, -5, -4, -3, -2, -1, 0, 1, 2], [9, 1]);
+      const ys = tf.tensor2d([-6, -4, -2, 0, 2, 4, 6, 8, 10], [9, 1]);
+
+      await model.fit(xs, ys, {
+        epochs: 350,
+        callbacks: {
+          onEpochEnd: (epoch, logs) => {
+            console.log(`Epoch: ${epoch} - Loss: ${logs.loss}`);
+          },
+          onTrainEnd: () => {
+            document.getElementById('status').innerText = 'Entrenamiento finalizado. Modelo listo.';
+            document.getElementById('predictionSection').style.display = 'block';
+          }
+        }
+      });
+    });
+
+    document.getElementById('predictBtn').addEventListener('click', () => {
+      const inputX = parseFloat(document.getElementById('inputX').value);
+      const inputTensor = tf.tensor2d([inputX], [1, 1]);
+
+      const prediction = model.predict(inputTensor);
+      prediction.array().then(result => {
+        document.getElementById('result').innerText = `Predicción para X=${inputX} → Y=${result[0][0].toFixed(2)}`;
+      });
+    });
+  </script>
+</body>
+</html>
